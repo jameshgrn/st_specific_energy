@@ -4,6 +4,12 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 
+st.set_page_config(
+    page_title="Open-Channel Flow",
+    page_icon=":ocean:",
+    layout="wide",
+)
+
 # Define constants
 g = 9.81
 
@@ -38,9 +44,12 @@ flow.
 # Input parameters
 st.sidebar.header("Input parameters")
 
-q = st.sidebar.slider("Discharge per unit width (q)", 0.0, 10.0, 5.0)
-ho = st.sidebar.number_input("Channel bottom elevation (ho)", 0.0, 10.0, 5.0)
-delta_h = st.sidebar.slider("Change in channel bottom elevation (delta h)", -10.0, 10.0, 0.0)
+with st.sidebar:
+    st.title("Input Parameters")
+    # Add all user inputs here
+    q = st.sidebar.slider("Discharge per unit width (q)", 0.0, 10.0, 5.0)
+    ho = st.sidebar.number_input("Channel bottom elevation (ho)", 0.0, 10.0, 5.0)
+    delta_h = st.sidebar.slider("Change in channel bottom elevation (delta h)", -10.0, 10.0, 0.0)
 
 # Calculate specific head and depth
 d = np.linspace(0.01, 10, 100)
@@ -104,6 +113,69 @@ def plot_specific_energy(df, d1, d2):
     ax.legend()
 
     return fig
+
+import plotly.graph_objects as go
+
+def plot_specific_energy_curve(specific_energy, critical_depth, sequent_depth):
+    fig = go.Figure()
+
+    # Add trace for specific energy curve
+    fig.add_trace(go.Scatter(
+        x=specific_energy['Depth'],
+        y=specific_energy['Specific Energy'],
+        name="Specific Energy",
+        mode="lines",
+        line=dict(color='blue')
+    ))
+
+    # Add trace for critical depth
+    fig.add_shape(
+        type='line',
+        x0=critical_depth,
+        x1=critical_depth,
+        y0=0,
+        y1=max(specific_energy['Specific Energy']),
+        yref='y',
+        xref='x',
+        line=dict(color='red', dash='dash'),
+        name="Critical Depth"
+    )
+    fig.add_trace(go.Scatter(
+        x=[critical_depth],
+        y=[specific_energy.loc[specific_energy['Depth'] == critical_depth]['Specific Energy'].values[0]],
+        text=[f"Critical Depth: {critical_depth:.2f}"],
+        mode="text",
+        showlegend=False
+    ))
+
+    # Add trace for sequent depth
+    fig.add_shape(
+        type='line',
+        x0=sequent_depth,
+        x1=sequent_depth,
+        y0=0,
+        y1=max(specific_energy['Specific Energy']),
+        yref='y',
+        xref='x',
+        line=dict(color='green', dash='dash'),
+        name="Sequent Depth"
+    )
+    fig.add_trace(go.Scatter(
+        x=[sequent_depth],
+        y=[specific_energy.loc[specific_energy['Depth'] == sequent_depth]['Specific Energy'].values[0]],
+        text=[f"Sequent Depth: {sequent_depth:.2f}"],
+        mode="text",
+        showlegend=False
+    ))
+
+    fig.update_layout(
+        title="Specific Energy Curve",
+        xaxis_title="Depth (ft)",
+        yaxis_title="Specific Energy (ft)"
+    )
+
+    st.plotly_chart(fig)
+
 
 
 specific_energy_fig = plot_specific_energy(df, d1, d2)
